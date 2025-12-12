@@ -67,11 +67,11 @@ app.post('/reschedule', async (req, res) => {
       const client = clients.find(c => {
         if (phone) {
           const cleanPhone = phone.replace(/\D/g, '');
-          const clientPhone = (c.mobilePhone || '').replace(/\D/g, '');
+          const clientPhone = (c.primaryPhoneNumber || '').replace(/\D/g, '');
           return clientPhone === cleanPhone;
         }
         if (email) {
-          return c.email?.toLowerCase() === email.toLowerCase();
+          return c.emailAddress?.toLowerCase() === email.toLowerCase();
         }
         return false;
       });
@@ -83,11 +83,11 @@ app.post('/reschedule', async (req, res) => {
         });
       }
 
-      clientId = client.id;
+      clientId = client.clientId;
 
       // Step 2: Get next upcoming appointment
       const appointmentsRes = await axios.get(
-        `${CONFIG.API_URL}/book/client/${client.id}/services?TenantId=${CONFIG.TENANT_ID}&LocationId=${CONFIG.LOCATION_ID}`,
+        `${CONFIG.API_URL}/book/client/${client.clientId}/services?TenantId=${CONFIG.TENANT_ID}&LocationId=${CONFIG.LOCATION_ID}`,
         { headers: { Authorization: `Bearer ${authToken}` }}
       );
 
