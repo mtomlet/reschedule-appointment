@@ -31,7 +31,7 @@ async function getToken() {
 
 app.post('/reschedule', async (req, res) => {
   try {
-    const { phone, email, new_datetime, appointment_service_id, service_id, client_id, stylist_id, concurrency_check } = req.body;
+    const { phone, new_datetime, appointment_service_id, service_id, client_id, stylist, concurrency_check } = req.body;
 
     if (!new_datetime) {
       return res.json({
@@ -40,10 +40,10 @@ app.post('/reschedule', async (req, res) => {
       });
     }
 
-    if (!appointment_service_id && !phone && !email) {
+    if (!appointment_service_id && !phone) {
       return res.json({
         success: false,
-        error: 'Please provide appointment_service_id or phone/email to lookup'
+        error: 'Please provide appointment_service_id or phone to lookup'
       });
     }
 
@@ -52,10 +52,10 @@ app.post('/reschedule', async (req, res) => {
     let serviceIdToReschedule = appointment_service_id;
     let serviceId = service_id;
     let clientId = client_id;
-    let stylistId = stylist_id;
+    let stylistId = stylist;
     let concurrencyDigits = concurrency_check;
 
-    // If phone/email provided, lookup the appointment
+    // If phone provided, lookup the appointment
     if (!serviceIdToReschedule) {
       // Step 1: Find client
       const clientsRes = await axios.get(
@@ -70,16 +70,13 @@ app.post('/reschedule', async (req, res) => {
           const clientPhone = (c.primaryPhoneNumber || '').replace(/\D/g, '');
           return clientPhone === cleanPhone;
         }
-        if (email) {
-          return c.emailAddress?.toLowerCase() === email.toLowerCase();
-        }
         return false;
       });
 
       if (!client) {
         return res.json({
           success: false,
-          error: 'No client found with that phone number or email'
+          error: 'No client found with that phone number'
         });
       }
 
@@ -107,7 +104,7 @@ app.post('/reschedule', async (req, res) => {
       const nextAppt = upcomingAppointments[0];
       serviceIdToReschedule = nextAppt.appointmentServiceId;
       serviceId = nextAppt.serviceId;
-      stylistId = nextAppt.employeeId;
+      stylistId = stylist || nextAppt.employeeId;  // Use new stylist if provided, else keep existing
       concurrencyDigits = nextAppt.concurrencyCheckDigits;
 
       console.log('Found appointment to reschedule:', serviceIdToReschedule, 'from', nextAppt.startTime, 'to', new_datetime);
